@@ -6,10 +6,26 @@ yarn-error.log*
 
 # Environment and Credentials
 .env
+.env.*
 *.local
 credentials.json
 flows_cred.json
 .config.runtime-json
+secrets.*
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+id_rsa*
+
+# Internal Documents & Confidential Academic Drafts
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.xlsx
+*.xls
 
 # Python cache & virtualenv
 __pycache__/
@@ -36,6 +52,9 @@ desktop.ini
 *.swp
 *.swo
 
-# Local Research Data (Optional - Keep template if needed)
+# Local Research Data & Logs
 *.csv
+*.log
+*.sqlite
+*.db
 !data-sample.csv
