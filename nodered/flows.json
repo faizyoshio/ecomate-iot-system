@@ -1,0 +1,613 @@
+[
+  {
+    "id": "tab_ecomate",
+    "type": "tab",
+    "label": "ECO-MATE",
+    "disabled": false,
+    "info": "Monitoring Bioproses & Kendali Pengaduk Komposter Rotari ECO-MATE"
+  },
+  {
+    "id": "ui_base_ecomate",
+    "type": "ui_base",
+    "theme": {
+      "name": "theme-dark"
+    },
+    "site": {
+      "name": "ECO-MATE",
+      "hideToolbar": "false",
+      "allowSwipe": "true",
+      "lockMenu": "false",
+      "allowTempTheme": "false",
+      "dateFormat": "DD/MM/YYYY",
+      "sizes": {
+        "sx": 48,
+        "sy": 48,
+        "gx": 6,
+        "gy": 6,
+        "cx": 6,
+        "cy": 6,
+        "px": 4,
+        "py": 4
+      }
+    }
+  },
+  {
+    "id": "ui_tab_main",
+    "type": "ui_tab",
+    "name": "Dashboard",
+    "icon": "dashboard",
+    "order": 1,
+    "disabled": false,
+    "hidden": false
+  },
+  {
+    "id": "grp_sensors",
+    "type": "ui_group",
+    "name": "Kondisi Bioproses",
+    "tab": "ui_tab_main",
+    "order": 1,
+    "disp": true,
+    "width": "6",
+    "collapse": false
+  },
+  {
+    "id": "grp_motor",
+    "type": "ui_group",
+    "name": "Pengaduk Drum",
+    "tab": "ui_tab_main",
+    "order": 2,
+    "disp": true,
+    "width": "6",
+    "collapse": false
+  },
+  {
+    "id": "grp_charts",
+    "type": "ui_group",
+    "name": "Tren Parameter",
+    "tab": "ui_tab_main",
+    "order": 3,
+    "disp": true,
+    "width": "6",
+    "collapse": false
+  },
+  {
+    "id": "grp_logger",
+    "type": "ui_group",
+    "name": "Log Penelitian (CSV)",
+    "tab": "ui_tab_main",
+    "order": 4,
+    "disp": true,
+    "width": "6",
+    "collapse": false
+  },
+  {
+    "id": "mqtt_broker_config",
+    "type": "mqtt-broker",
+    "name": "Broker Lokal",
+    "broker": "127.0.0.1",
+    "port": "1883",
+    "clientid": "NodeRED_ECO_MATE",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoBufferClearing": true
+  },
+  {
+    "id": "aedes_broker",
+    "type": "aedes broker",
+    "z": "tab_ecomate",
+    "name": "Embedded MQTT Broker",
+    "mqtt_port": 1883,
+    "mqtt_ws_port": "",
+    "cert": "",
+    "key": "",
+    "certname": "",
+    "keyname": "",
+    "dburl": "",
+    "usetls": false,
+    "x": 160,
+    "y": 60,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "mqtt_in_telemetry",
+    "type": "mqtt in",
+    "z": "tab_ecomate",
+    "name": "ecomate/telemetry",
+    "topic": "ecomate/telemetry",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "mqtt_broker_config",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 150,
+    "y": 180,
+    "wires": [
+      [
+        "split_payload",
+        "csv_formatter"
+      ]
+    ]
+  },
+  {
+    "id": "split_payload",
+    "type": "function",
+    "z": "tab_ecomate",
+    "name": "Parser Telemetri",
+    "func": "var data = msg.payload;\nvar p_suhu = { payload: Number(data.suhu || 0), topic: 'Suhu' };\nvar p_kelembaban = { payload: Number(data.kelembaban || 0), topic: 'Kelembaban' };\nvar p_ph = { payload: Number(data.ph || 0), topic: 'pH' };\nvar p_motor = { payload: data.motor ? 'Aktif (17.5 RPM)' : 'Standby' };\nreturn [p_suhu, p_kelembaban, p_ph, p_motor];",
+    "outputs": 4,
+    "noerr": 0,
+    "x": 380,
+    "y": 180,
+    "wires": [
+      [
+        "gauge_suhu",
+        "chart_bioproses",
+        "check_suhu_kritis"
+      ],
+      [
+        "gauge_kelembaban",
+        "chart_bioproses"
+      ],
+      [
+        "gauge_ph",
+        "chart_ph"
+      ],
+      [
+        "text_motor_status"
+      ]
+    ]
+  },
+  {
+    "id": "gauge_suhu",
+    "type": "ui_gauge",
+    "z": "tab_ecomate",
+    "name": "Suhu Inti",
+    "group": "grp_sensors",
+    "order": 1,
+    "width": 6,
+    "height": 4,
+    "gtype": "gage",
+    "title": "Suhu Inti Biomassa",
+    "label": "\u00b0C",
+    "format": "{{value | number:1}} \u00b0C",
+    "min": 0,
+    "max": 80,
+    "colors": [
+      "#0284c7",
+      "#10b981",
+      "#ef4444"
+    ],
+    "seg1": "45",
+    "seg2": "65",
+    "x": 640,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "gauge_kelembaban",
+    "type": "ui_gauge",
+    "z": "tab_ecomate",
+    "name": "Kadar Air",
+    "group": "grp_sensors",
+    "order": 2,
+    "width": 6,
+    "height": 3,
+    "gtype": "gage",
+    "title": "Kadar Air Media",
+    "label": "%",
+    "format": "{{value | number:1}} %",
+    "min": 0,
+    "max": 100,
+    "colors": [
+      "#f59e0b",
+      "#06b6d4",
+      "#64748b"
+    ],
+    "seg1": "40",
+    "seg2": "70",
+    "x": 640,
+    "y": 170,
+    "wires": []
+  },
+  {
+    "id": "gauge_ph",
+    "type": "ui_gauge",
+    "z": "tab_ecomate",
+    "name": "pH",
+    "group": "grp_sensors",
+    "order": 3,
+    "width": 6,
+    "height": 3,
+    "gtype": "gage",
+    "title": "Derajat Keasaman (pH)",
+    "label": "pH",
+    "format": "{{value | number:2}}",
+    "min": 0,
+    "max": 14,
+    "colors": [
+      "#f59e0b",
+      "#8b5cf6",
+      "#3b82f6"
+    ],
+    "seg1": "6.0",
+    "seg2": "8.5",
+    "x": 630,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "text_motor_status",
+    "type": "ui_text",
+    "z": "tab_ecomate",
+    "group": "grp_motor",
+    "order": 1,
+    "width": 6,
+    "height": 1,
+    "name": "Status Motor",
+    "label": "Status Pengaduk",
+    "format": "{{msg.payload}}",
+    "layout": "row-spread",
+    "style": false,
+    "font": "",
+    "fontSize": 14,
+    "color": "#38bdf8",
+    "x": 650,
+    "y": 280,
+    "wires": []
+  },
+  {
+    "id": "ui_switch_motor",
+    "type": "ui_switch",
+    "z": "tab_ecomate",
+    "name": "Saklar Motor",
+    "label": "Manual Saklar (ON/OFF)",
+    "tooltip": "Kontrol manual motor penggerak drum",
+    "group": "grp_motor",
+    "order": 2,
+    "width": 6,
+    "height": 1,
+    "passthru": false,
+    "topic": "ecomate/cmd/motor",
+    "topicType": "str",
+    "style": "",
+    "onvalue": "1",
+    "onvalueType": "str",
+    "onicon": "",
+    "oncolor": "#10b981",
+    "offvalue": "0",
+    "offvalueType": "str",
+    "officon": "",
+    "offcolor": "#475569",
+    "animate": false,
+    "x": 170,
+    "y": 420,
+    "wires": [
+      [
+        "mqtt_out_motor"
+      ]
+    ]
+  },
+  {
+    "id": "ui_btn_10min",
+    "type": "ui_button",
+    "z": "tab_ecomate",
+    "name": "Putar 10 Menit",
+    "group": "grp_motor",
+    "order": 3,
+    "width": 6,
+    "height": 1,
+    "passthru": false,
+    "label": "Putar 10 Menit",
+    "tooltip": "Jalankan siklus pengadukan selama 10 menit",
+    "color": "#ffffff",
+    "bgcolor": "#2563eb",
+    "icon": "",
+    "payload": "1",
+    "payloadType": "str",
+    "topic": "ecomate/cmd/motor",
+    "topicType": "str",
+    "x": 170,
+    "y": 480,
+    "wires": [
+      [
+        "trigger_10min"
+      ]
+    ]
+  },
+  {
+    "id": "inject_4hours",
+    "type": "inject",
+    "z": "tab_ecomate",
+    "name": "Siklus Tiap 4 Jam",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "14400",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "1",
+    "payloadType": "str",
+    "x": 170,
+    "y": 540,
+    "wires": [
+      [
+        "trigger_10min"
+      ]
+    ]
+  },
+  {
+    "id": "trigger_10min",
+    "type": "trigger",
+    "z": "tab_ecomate",
+    "name": "Timer 10 Menit",
+    "op1": "1",
+    "op2": "0",
+    "op1type": "str",
+    "op2type": "str",
+    "duration": "10",
+    "extend": false,
+    "overrideDelay": false,
+    "units": "min",
+    "reset": "",
+    "bytopic": "all",
+    "topic": "topic",
+    "outputs": 1,
+    "x": 420,
+    "y": 500,
+    "wires": [
+      [
+        "mqtt_out_motor"
+      ]
+    ]
+  },
+  {
+    "id": "mqtt_out_motor",
+    "type": "mqtt out",
+    "z": "tab_ecomate",
+    "name": "Kirim ke ESP32",
+    "topic": "ecomate/cmd/motor",
+    "qos": "1",
+    "retain": "false",
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt_broker_config",
+    "x": 710,
+    "y": 460,
+    "wires": []
+  },
+  {
+    "id": "chart_bioproses",
+    "type": "ui_chart",
+    "z": "tab_ecomate",
+    "name": "Grafik Suhu & Air",
+    "group": "grp_charts",
+    "order": 1,
+    "width": 6,
+    "height": 4,
+    "label": "Suhu (\u00b0C) & Kadar Air (%)",
+    "chartType": "line",
+    "legend": "true",
+    "xformat": "HH:mm:ss",
+    "interpolate": "linear",
+    "nodata": "Menunggu data...",
+    "dot": false,
+    "ymin": "0",
+    "ymax": "90",
+    "removeOlder": 1,
+    "removeOlderPoints": "",
+    "removeOlderUnit": "86400",
+    "cutout": 0,
+    "useOneColor": false,
+    "useUTC": false,
+    "colors": [
+      "#ef4444",
+      "#06b6d4",
+      "#10b981",
+      "#2ca02c",
+      "#98df8a",
+      "#d62728",
+      "#ff9896",
+      "#9467bd",
+      "#c5b0d5"
+    ],
+    "outputs": 1,
+    "useDifferentColor": false,
+    "x": 650,
+    "y": 340,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "chart_ph",
+    "type": "ui_chart",
+    "z": "tab_ecomate",
+    "name": "Grafik pH",
+    "group": "grp_charts",
+    "order": 2,
+    "width": 6,
+    "height": 4,
+    "label": "Nilai pH",
+    "chartType": "line",
+    "legend": "false",
+    "xformat": "HH:mm:ss",
+    "interpolate": "linear",
+    "nodata": "Menunggu data...",
+    "dot": false,
+    "ymin": "0",
+    "ymax": "14",
+    "removeOlder": 1,
+    "removeOlderPoints": "",
+    "removeOlderUnit": "86400",
+    "cutout": 0,
+    "useOneColor": false,
+    "useUTC": false,
+    "colors": [
+      "#8b5cf6",
+      "#aec7e8",
+      "#ff7f0e",
+      "#2ca02c",
+      "#98df8a",
+      "#d62728",
+      "#ff9896",
+      "#9467bd",
+      "#c5b0d5"
+    ],
+    "outputs": 1,
+    "useDifferentColor": false,
+    "x": 630,
+    "y": 390,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "csv_formatter",
+    "type": "function",
+    "z": "tab_ecomate",
+    "name": "Format Baris CSV",
+    "func": "var d = new Date();\nvar tgl = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');\nvar data = msg.payload;\nvar row = tgl + ',' + (data.suhu || 0) + ',' + (data.kelembaban || 0) + ',' + (data.ph || 0) + ',' + (data.motor ? 1 : 0) + '\\n';\nmsg.payload = row;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 380,
+    "y": 280,
+    "wires": [
+      [
+        "file_logger",
+        "ui_last_log"
+      ]
+    ]
+  },
+  {
+    "id": "file_logger",
+    "type": "file",
+    "z": "tab_ecomate",
+    "name": "data-ecomate-log.csv",
+    "filename": "C:/Users/fz/Documents/data-ecomate-log.csv",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "false",
+    "encoding": "utf8",
+    "x": 660,
+    "y": 510,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "ui_last_log",
+    "type": "ui_text",
+    "z": "tab_ecomate",
+    "group": "grp_logger",
+    "order": 1,
+    "width": 6,
+    "height": 2,
+    "name": "Entri Log",
+    "label": "Entri Terakhir",
+    "format": "{{msg.payload}}",
+    "layout": "col-center",
+    "style": false,
+    "font": "monospace",
+    "fontSize": 13,
+    "color": "#10b981",
+    "x": 630,
+    "y": 560,
+    "wires": []
+  },
+  {
+    "id": "check_suhu_kritis",
+    "type": "switch",
+    "z": "tab_ecomate",
+    "name": "Batas Kritis",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "gt",
+        "v": "70",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 630,
+    "y": 60,
+    "wires": [
+      [
+        "prep_wa"
+      ]
+    ]
+  },
+  {
+    "id": "prep_wa",
+    "type": "function",
+    "z": "tab_ecomate",
+    "name": "Format WA",
+    "func": "msg.headers = { 'Authorization': 'TOKEN_FONNTE' };\nmsg.payload = {\n    'target': '081234567890',\n    'message': '[ECO-MATE] Suhu biomassa melebihi 70\u00b0C (' + msg.payload.toFixed(1) + '\u00b0C). Harap periksa aerasi drum.'\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 830,
+    "y": 60,
+    "wires": [
+      [
+        "http_fonnte"
+      ]
+    ]
+  },
+  {
+    "id": "http_fonnte",
+    "type": "http request",
+    "z": "tab_ecomate",
+    "name": "Kirim WhatsApp",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://api.fonnte.com/send",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 1050,
+    "y": 60,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "ui_responsive_css",
+    "type": "ui_template",
+    "z": "tab_ecomate",
+    "pagePath": "",
+    "name": "UI/UX Pro Max Styling",
+    "group": "grp_sensors",
+    "order": 1,
+    "width": 0,
+    "height": 0,
+    "format": "<style>\n  /* UI/UX PRO MAX - Minimalist Clean Industrial Design */\n  * {\n    -webkit-tap-highlight-color: transparent !important;\n    box-sizing: border-box !important;\n  }\n\n  html, body {\n    overflow-x: hidden !important;\n    background-color: #0b0f19 !important;\n    font-family: -apple-system, BlinkMacSystemFont, \"Inter\", \"Segoe UI\", Roboto, sans-serif !important;\n    color: #f1f5f9 !important;\n  }\n\n  /* Header Toolbar Clean */\n  md-toolbar.md-default-theme, md-toolbar {\n    background-color: #0b0f19 !important;\n    border-bottom: 1px solid #1e293b !important;\n    color: #f8fafc !important;\n  }\n  .md-toolbar-tools {\n    font-weight: 700 !important;\n    letter-spacing: 0.05em !important;\n  }\n\n  /* Layout Container */\n  .nr-dashboard-cardpanel {\n    padding: 6px !important;\n    margin: 0 auto !important;\n    max-width: 100vw !important;\n    display: flex !important;\n    flex-wrap: wrap !important;\n    justify-content: center !important;\n    gap: 8px !important;\n  }\n\n  /* Cards - Professional Slate Border */\n  md-card {\n    border-radius: 12px !important;\n    background: #111827 !important;\n    border: 1px solid #1f2937 !important;\n    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;\n    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;\n  }\n  md-card:hover {\n    border-color: #374151 !important;\n  }\n\n  /* Section Title - Clean Uppercase Subhead */\n  .nr-dashboard-cardtitle {\n    font-size: 13px !important;\n    font-weight: 700 !important;\n    color: #94a3b8 !important;\n    text-transform: uppercase !important;\n    letter-spacing: 0.06em !important;\n    padding: 10px 14px 2px 14px !important;\n  }\n\n  /* Gauges Crisp Display */\n  .nr-dashboard-gauge svg {\n    max-width: 100% !important;\n    height: auto !important;\n  }\n  .nr-dashboard-gauge-title {\n    font-weight: 600 !important;\n    font-size: 13px !important;\n    color: #cbd5e1 !important;\n  }\n\n  /* Interactive Button - Modern Solid Pill */\n  md-button {\n    min-height: 48px !important;\n    border-radius: 8px !important;\n    font-size: 14px !important;\n    font-weight: 600 !important;\n    letter-spacing: 0.02em !important;\n    background-color: #2563eb !important;\n    color: #ffffff !important;\n    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3) !important;\n    transition: all 0.15s ease !important;\n  }\n  md-button:hover {\n    background-color: #1d4ed8 !important;\n  }\n  md-button:active {\n    transform: scale(0.98) !important;\n  }\n\n  /* Switches Clean */\n  md-switch {\n    margin: 8px 14px !important;\n  }\n  md-switch .md-label {\n    font-size: 14px !important;\n    font-weight: 500 !important;\n    color: #e2e8f0 !important;\n  }\n  md-switch.md-checked .md-bar {\n    background-color: #10b981 !important;\n  }\n  md-switch.md-checked .md-thumb {\n    background-color: #34d399 !important;\n  }\n\n  /* Text elements */\n  .nr-dashboard-text {\n    padding: 6px 14px !important;\n  }\n\n  /* Monospace Logger */\n  md-card[title*=\"Log\"] pre, .nr-dashboard-text p {\n    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;\n  }\n\n  @media screen and (max-width: 600px) {\n    .nr-dashboard-cardpanel {\n      padding: 4px !important;\n    }\n  }\n</style>\n",
+    "storeOutMessages": false,
+    "fwdInMessages": false,
+    "resendOnRefresh": false,
+    "templateScope": "global",
+    "x": 380,
+    "y": 100,
+    "wires": [
+      []
+    ]
+  }
+]
