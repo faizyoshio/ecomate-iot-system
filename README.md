@@ -41,8 +41,6 @@ Tampilan satu kolom (*single-column*) yang dioptimalkan untuk pengoperasian lapa
    - **Otomasi Siklus Terjadwal**: Siklus putar otomatis 10 menit setiap 4 jam.
 4. **Pencatatan Data Otomatis (Datalogger 21 Hari)**:
    - Setiap paket telemetri otomatis dicatat ke berkas CSV lokal untuk analisis data statistik, pembuatan grafik kinetika dekomposisi, dan lampiran laporan akhir.
-5. **WhatsApp Notification Gateway (Fonnte API)**:
-   - Notifikasi otomatis terkirim ke ponsel operator saat suhu melebihi ambang batas kritis $>70^\circ\text{C}$.
 
 ---
 
